@@ -23,34 +23,35 @@ impl Echo for MyEcho {
 // Easier version you'd use for a normal gRPC server
 // But we want to understand how this connects with Hyper!
 //
-// #[tokio::main]
-// async fn main() -> anyhow::Result<()> {
-//     let addr = ([0, 0, 0, 0], 3000).into();
-
-//     tonic::transport::Server::builder()
-//         .add_service(EchoServer::new(MyEcho))
-//         .serve(addr)
-//         .await?;
-
-//     Ok(())
-// }
-
 #[tokio::main]
-async fn main() {
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+async fn main() -> anyhow::Result<()> {
+    let addr = ([0, 0, 0, 0], 3000).into();
 
-    let grpc_service = tonic::transport::Server::builder()
+    tonic::transport::Server::builder()
+        .accept_http1(true)
         .add_service(EchoServer::new(MyEcho))
-        .into_service();
+        .serve(addr)
+        .await?;
 
-    let make_grpc_service = make_service_fn(move |_conn| {
-        let grpc_service = grpc_service.clone();
-        async { Ok::<_, Infallible>(grpc_service) }
-    });
-
-    let server = hyper::Server::bind(&addr).serve(make_grpc_service);
-
-    if let Err(e) = server.await {
-        eprintln!("server error: {}", e);
-    }
+    Ok(())
 }
+
+// #[tokio::main]
+// async fn main() {
+//     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+
+//     let grpc_service = tonic::transport::Server::builder()
+//         .add_service(EchoServer::new(MyEcho))
+//         .into_service();
+
+//     let make_grpc_service = make_service_fn(move |_conn| {
+//         let grpc_service = grpc_service.clone();
+//         async { Ok::<_, Infallible>(grpc_service) }
+//     });
+
+//     let server = hyper::Server::bind(&addr).serve(make_grpc_service);
+
+//     if let Err(e) = server.await {
+//         eprintln!("server error: {}", e);
+//     }
+// }
